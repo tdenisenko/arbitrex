@@ -1,0 +1,26 @@
+hello world
+
+<script src="js/jquery-3.2.0.js"></script>
+<script src="js/money.js"></script>
+
+<script>
+    $.getJSON(
+        // NB: using Open Exchange Rates here, but you can use any source!
+        'https://openexchangerates.org/api/latest.json?app_id=a2746f4bc0104ce5a9d2365825e416a7&base=USD',
+        function(data) {
+            // Check money.js has finished loading:
+            if ( typeof fx !== "undefined" && fx.rates ) {
+                fx.rates = data.rates;
+                fx.base = data.base;
+                console.log(fx(1).from('USD').to('TRY'));
+            } else {
+                // If not, apply to fxSetup global:
+                var fxSetup = {
+                    rates : data.rates,
+                    base : data.base
+                }
+            }
+        }
+    );
+    
+</script>
