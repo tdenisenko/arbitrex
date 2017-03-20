@@ -1,0 +1,5 @@
+<?php 
+
+readfile('rates.json');
+
+?>
