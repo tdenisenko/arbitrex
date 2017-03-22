@@ -1,8 +1,35 @@
-hello world
+<!DOCTYPE html>
+<html ng-app="arbitrex">
+    <head>
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+        <!-- css files -->
+        <link rel="stylesheet" type="text/css" href="css/styles.css">
+        <link rel="stylesheet" type="text/css" href="lib/bootstrap/dist/css/bootstrap.min.css">
 
-<script src="js/jquery-3.2.0.js"></script>
-<script src="js/money.js"></script>
+        <title>Arbitrex</title>
+    </head>
+    <body ng-controller="homepageCtrl">
+        <div>
+            Hello {{world}}!
+        </div>
 
+        <!-- libraries -->
+        <script src="lib/angular/angular.js"></script>
+        <script src="lib/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+        <script src="lib/money.js/money.js"></script>
+        <script src="lib/accounting.js/accounting.js"></script>
+
+        <!-- core -->
+        <script src="js/app.js"></script>
+
+        <!-- homepage controller -->
+        <script src="js/controller.js"></script>
+    </body>
+</html>
+
+<!--
 <script>
     $.getJSON(
         // NB: using Open Exchange Rates here, but you can use any source!
@@ -24,3 +51,4 @@ hello world
     );
     
 </script>
+-->
