@@ -2,8 +2,8 @@
     'use strict';
  
     angular.module('arbitrex', [
-        'ui.bootstrap',
-        'homepage'])
+        //'ui.bootstrap',
+        'homepage']);/*
         .config(config);
  
     config.$inject = ['$compileProvider', '$httpProvider'];
@@ -40,6 +40,6 @@
         }
         $compileProvider.imgSrcSanitizationWhitelist(/^\s*(|local)/);
  
-    }
+    }*/
  
 })();

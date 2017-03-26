@@ -13,10 +13,10 @@ $now = time();
 $phptime = date("Y-m-d H:i:s", $now);
 $diff = $now - strtotime($mysqltime);
 
-if($diff > 1800) {
+if($diff > 1200) {
     echo("true");
 } else {
-    echo("false");
+    echo(1200 - $diff);
 }
 
 mysql_close($conn);

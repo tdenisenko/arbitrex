@@ -6,21 +6,72 @@
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
         <!-- css files -->
         <link rel="stylesheet" type="text/css" href="css/styles.css">
-        <link rel="stylesheet" type="text/css" href="lib/bootstrap/dist/css/bootstrap.min.css">
-
+        <!-- <link rel="stylesheet" type="text/css" href="lib/bootstrap/dist/css/bootstrap.min.css">
+        -->
         <title>Arbitrex</title>
     </head>
     <body ng-controller="homepageCtrl">
         <div>
-            Hello {{world}}!
+            <h1>BX - Bitstamp Arbitrage</h1>
+            <label for="amount">Enter Total Amount</label>
+            <input name="amount" ng-model="input.amount" />
+            <select ng-model="input.type">
+                <option value="THB">THB - Thai Baht</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="BTC">BTC - Bitcoin</option>
+            </select>
+            <br>
+            <label for="traded">Enter Current Trade Amount</label>
+            <input name="traded" ng-model="input.traded" />
+            <select ng-model="input.tradedType">
+                <option value="THB">THB - Thai Baht</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="BTC">BTC - Bitcoin</option>
+            </select>
+            <br>
+            <!-- SCB Exchange Rate Fee -->
+            <b>SCB Exchange Rate Fee:</b> {{formatMoney(calcTraded(calcTotalExchangeRateFee()))}}
+            <br>
+            <!-- SCB: 550 + 800 (OUR) = 1350 THB -->
+            <b>SCB SWIFT Transfer Fees:</b> {{formatMoney(calcTraded(calcTotalTransferFee()))}}
+            <br>
+            <b>Intermediary Bank Fee:</b> -
+            <br>
+            <!-- 0.05%, Minimum 7.5 USD -->
+            <b>Bitstamp Deposit Fee:</b> {{formatMoney(calcTraded(calcTotalBitstampDepositFee()))}}
+            <br>
+            <!-- 0.25%, need to take it from real API later -->
+            <label>Current Bitstamp Commission Rate: </label>
+            <select ng-model="input.bitstampfee">
+                <option value="0.25">0.25%</option>
+                <option value="0.24">0.24%</option>
+                <option value="0.22">0.22%</option>
+                <option value="0.20">0.20%</option>
+                <option value="0.15">0.15%</option>
+                <option value="0.14">0.14%</option>
+                <option value="0.13">0.13%</option>
+                <option value="0.12">0.12%</option>
+                <option value="0.11">0.11%</option>
+                <option value="0.10">0.10%</option>
+            </select>
+            {{formatMoney(calcTraded(calcTotalBitstampCommissionFee()))}}
+            <br>
+            <b>BX Commission Rate (0.25%):</b> {{formatMoney(calcTraded(calcTotalBxCommissionFee()))}}
+            <br>
+            <!-- 30 THB + 10 THB per 10,000 THB -->
+            <b>BX Withdraw Fee:</b> {{formatMoney(calcTraded(calcTotalBxWithdrawFee()))}}
+            <br>
+            <b>Difference Between Exchanges:</b> {{formatMoney(calcTraded(calcTotalDiffBetweenExchanges()))}}
+            <br>
+            <b>Net Profit:</b> {{formatMoney(calcTraded(calcTotalNetProfit()))}}
         </div>
 
         <!-- libraries -->
-        <script src="lib/angular/angular.js"></script>
-        <script src="lib/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
-        <script src="lib/money.js/money.js"></script>
-        <script src="lib/accounting.js/accounting.js"></script>
-
+        <script src="lib/money.js/money.min.js"></script>
+        <script src="lib/accounting.js/accounting.min.js"></script>
+        <script src="lib/angular/angular.min.js"></script>
+        <!-- <script src="lib/angular-bootstrap/ui-bootstrap-tpls.min.js"></script> -->
+        
         <!-- core -->
         <script src="js/app.js"></script>
 
@@ -28,27 +79,3 @@
         <script src="js/controller.js"></script>
     </body>
 </html>
-
-<!--
-<script>
-    $.getJSON(
-        // NB: using Open Exchange Rates here, but you can use any source!
-        'https://openexchangerates.org/api/latest.json?app_id=a2746f4bc0104ce5a9d2365825e416a7&base=USD',
-        function(data) {
-            // Check money.js has finished loading:
-            if ( typeof fx !== "undefined" && fx.rates ) {
-                fx.rates = data.rates;
-                fx.base = data.base;
-                console.log(fx(1).from('USD').to('TRY'));
-            } else {
-                // If not, apply to fxSetup global:
-                var fxSetup = {
-                    rates : data.rates,
-                    base : data.base
-                }
-            }
-        }
-    );
-    
-</script>
--->
