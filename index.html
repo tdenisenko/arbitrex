@@ -12,8 +12,7 @@
     </head>
     <body ng-controller="homepageCtrl">
         <div>
-            <h1>BX - Bitstamp Arbitrage</h1>
-            <label for="amount">Enter Total Amount</label>
+            <b><label for="amount">Enter Total Amount</label></b>
             <input name="amount" ng-model="input.amount" />
             <select ng-model="input.type">
                 <option value="THB">THB - Thai Baht</option>
@@ -21,7 +20,7 @@
                 <option value="BTC">BTC - Bitcoin</option>
             </select>
             <br>
-            <label for="traded">Enter Current Trade Amount</label>
+            <b><label for="traded">Enter Current Trade Amount</label></b>
             <input name="traded" ng-model="input.traded" />
             <select ng-model="input.tradedType">
                 <option value="THB">THB - Thai Baht</option>
@@ -29,48 +28,122 @@
                 <option value="BTC">BTC - Bitcoin</option>
             </select>
             <br>
-            <!-- SCB Exchange Rate Fee -->
-            <b>SCB Exchange Rate Fee:</b> {{formatMoney(calcTraded(calcTotalExchangeRateFee()))}}
-            <br>
-            <!-- SCB: 550 + 800 (OUR) = 1350 THB -->
-            <b>SCB SWIFT Transfer Fees:</b> {{formatMoney(calcTraded(calcTotalTransferFee()))}}
-            <br>
-            <b>Intermediary Bank Fee:</b> -
-            <br>
-            <!-- 0.05%, Minimum 7.5 USD -->
-            <b>Bitstamp Deposit Fee:</b> {{formatMoney(calcTraded(calcTotalBitstampDepositFee()))}}
-            <br>
-            <!-- 0.25%, need to take it from real API later -->
-            <label>Current Bitstamp Commission Rate: </label>
-            <select ng-model="input.bitstampfee">
-                <option value="0.25">0.25%</option>
-                <option value="0.24">0.24%</option>
-                <option value="0.22">0.22%</option>
-                <option value="0.20">0.20%</option>
-                <option value="0.15">0.15%</option>
-                <option value="0.14">0.14%</option>
-                <option value="0.13">0.13%</option>
-                <option value="0.12">0.12%</option>
-                <option value="0.11">0.11%</option>
-                <option value="0.10">0.10%</option>
-            </select>
-            {{formatMoney(calcTraded(calcTotalBitstampCommissionFee()))}}
-            <br>
-            <b>BX Commission Rate (0.25%):</b> {{formatMoney(calcTraded(calcTotalBxCommissionFee()))}}
-            <br>
-            <!-- 30 THB + 10 THB per 10,000 THB -->
-            <b>BX Withdraw Fee:</b> {{formatMoney(calcTraded(calcTotalBxWithdrawFee()))}}
-            <br>
-            <b>Difference Between Exchanges:</b> {{formatMoney(calcTraded(calcTotalDiffBetweenExchanges()))}}
-            <br>
-            <b>Net Profit:</b> {{formatMoney(calcTraded(calcTotalNetProfit()))}}
+            <uib-tabset active="0">
+                <uib-tab index="0" heading="Bx.in.th -> Bitstamp">
+                    <table>
+                        <tr>
+                            <th>Type</th>
+                            <th>Rate</th>
+                            <th>Calculated</th>
+                        </tr>
+                        <tr>
+                            <td>SCB Exchange Rate Fee</td>
+                            <td>
+                                <input ng-disabled="input.scbGetLatestRate" type="number" ng-model="input.scbRate" />
+                                <input type="checkbox" ng-model="input.scbGetLatestRate" ng-change="updateScbRate()" />
+                                <label>Get Current Rate</label>
+                            </td>
+                            <td>{{formatMoney(calcTraded(bx2bs.calcTotalExchangeRateFee()))}}</td>
+                        </tr>
+                        <tr>
+                            <td>Bitstamp Transfer Fee</td>
+                            <td>0.09% (Minimum 15 USD)</td>
+                            <td>{{formatMoney(calcTraded(bx2bs.calcTotalBitstampTransferFee()))}}</td>
+                        </tr>
+                    </table>
+                </uib-tab>
+                <uib-tab index="1" heading="Bitstamp -> Bx.in.th">
+                    <table>
+                        <tr>
+                            <th>Type</th>
+                            <th>Rate</th>
+                            <th>Calculated</th>
+                        </tr>
+                        <tr>
+                            <td>SCB Exchange Rate Fee</td>
+                            <td>
+                                <input ng-disabled="input.scbGetLatestRate" type="number" ng-model="input.scbRate" />
+                                <input type="checkbox" ng-model="input.scbGetLatestRate" ng-change="updateScbRate()" />
+                                <label>Get Current Rate</label>
+                            </td>
+                            <td>{{formatMoney(calcTraded(bs2bx.calcTotalExchangeRateFee()))}}</td>
+                        </tr>
+                        <tr>
+                            <td>SCB SWIFT Transfer Fee</td>
+                            <td>1350 THB</td>
+                            <td>{{formatMoney(calcTraded(bs2bx.calcTotalScbSwiftTransferFee()))}}</td>
+                        </tr>
+                    </table>
+                </uib-tab>
+                <uib-tab index="2" heading="Bitstamp -> Koinim">Long Labeled Justified content</uib-tab>
+            </uib-tabset>
+            <table>
+                <tr ng-if="!isBs2Bx">
+                    <td>Bitstamp Transfer Fee</td>
+                    <td>0.09% (Minimum 15 USD)</td>
+                    <td>{{formatMoney(calcTraded(calcTotalBitstampTransferFee()))}}</td>
+                </tr>
+                <tr>
+                    <td>Intermediary Bank Fee</td>
+                    <td>?</td>
+                    <td>?</td>
+                </tr>
+                <tr ng-if="isBs2Bx">
+                    <td>Bitstamp Deposit Fee</td>
+                    <td>0.05% (Minimum 7.5 USD)</td>
+                    <td>{{formatMoney(calcTraded(calcTotalBitstampDepositFee()))}}</td>
+                </tr>
+                <tr>
+                    <td>Current Bitstamp Commission Rate</td>
+                    <td>
+                        <select ng-model="input.bitstampfee">
+                            <option value="0.25">0.25%</option>
+                            <option value="0.24">0.24%</option>
+                            <option value="0.22">0.22%</option>
+                            <option value="0.20">0.20%</option>
+                            <option value="0.15">0.15%</option>
+                            <option value="0.14">0.14%</option>
+                            <option value="0.13">0.13%</option>
+                            <option value="0.12">0.12%</option>
+                            <option value="0.11">0.11%</option>
+                            <option value="0.10">0.10%</option>
+                        </select>
+                    </td>
+                    <td>{{formatMoney(calcTraded(calcTotalBitstampCommissionFee()))}}</td>
+                </tr>
+                <tr>
+                    <td>BX Commission Rate</td>
+                    <td>0.25%</td>
+                    <td>{{formatMoney(calcTraded(calcTotalBxCommissionFee()))}}</td>
+                </tr>
+                <tr ng-if="isBs2Bx">
+                    <td>BX Withdraw Fee</td>
+                    <td>30 THB + 10 THB per 10,000 THB</td>
+                    <td>{{formatMoney(calcTraded(calcTotalBxWithdrawFee()))}}</td>
+                </tr>
+                <tr ng-if="!isBs2Bx">
+                    <td>SCB Transfer Fee</td>
+                    <td>35 THB per 50,000 THB</td>
+                    <td>{{formatMoney(calcTraded(calcTotalScbLocalTransferFee()))}}</td>
+                </tr>
+                <tr>
+                    <td>Difference Between Exchanges</td>
+                    <td>{{getPercentage(calcTotalDiffBetweenExchanges(), input.amount)}}</td>
+                    <td>{{formatMoney(calcTraded(calcTotalDiffBetweenExchanges()))}}</td>
+                </tr>
+                <tr>
+                    <td>Net Profit</td>
+                    <td>{{getPercentage(calcTotalNetProfit(), input.amount)}}</td>
+                    <td>{{formatMoney(calcTraded(calcTotalNetProfit()))}}</td>
+                </tr>
+            </table>
         </div>
 
         <!-- libraries -->
         <script src="lib/money.js/money.min.js"></script>
         <script src="lib/accounting.js/accounting.min.js"></script>
         <script src="lib/angular/angular.min.js"></script>
-        <!-- <script src="lib/angular-bootstrap/ui-bootstrap-tpls.min.js"></script> -->
+        <script src="lib/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
         
         <!-- core -->
         <script src="js/app.js"></script>

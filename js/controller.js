@@ -18,15 +18,19 @@
         var getBxRateUrl = 'https://bx.in.th/api/trade/?pairing=1';
 
         var exchanges = {
-            bitstamp: 1000,
-            bx: 35000
+            bitstampAsk: 1000,
+            bitstampBid: 1000,
+            bxAsk: 35000,
+            bxBid: 35000
         };
         $scope.input = {
             amount: 600000,
             traded: 200000,
             type: 'THB',
             tradedType: 'THB',
-            bitstampfee: '0.24'
+            bitstampfee: '0.15',
+            scbRate: 34.2,
+            scbGetLatestRate: false
         };
         var rates = null;
 
@@ -45,7 +49,7 @@
                     if ( typeof fx !== "undefined" && fx.rates ) {
                         fx.rates = response.data.rates;
                         fx.base = response.data.base;
-                        console.log(fx(1).from('USD').to($scope.input.type));
+                        //console.log(fx(1).from('USD').to($scope.input.type));
                     } else {
                         var fxSetup = {
                             rates : response.data.rates,
@@ -53,7 +57,6 @@
                         }
                     }
                     rates = response.data;
-                    console.log(rates);
                 }
             });
         };
@@ -61,37 +64,42 @@
         var serverUpdate = function() {
             $http.jsonp(getRatesUrl).then(function(response) {
                 var tempRates = response.data;
-                $http.post(proxy, getScbRatesUrl).then(function(response) {
-                    var input = response.data;
-                    var regex = /<td width="\d+" align="right" class="TextMainBorderGlay">(.+)<\/td>/g;
-                    var matches, output = [];
-                    while ((matches = regex.exec(input)) && output.length < 3) {
-                        output.push(matches[1]);
-                    }
-                    var ttSell = output[0];
-                    var ttBuy = output[2];
-                    console.log('SCB Selling Rate: ' + ttSell);
-                    console.log('SCB Buying Rate: ' + ttBuy);
-                    tempRates.rates.scbSell = Number(ttSell);
-                    tempRates.rates.scbBuy = Number(ttBuy);
-                    angular.copy(tempRates, rates);
-                    if ( typeof fx !== "undefined" && fx.rates ) {
-                        fx.rates = tempRates.rates;
-                        fx.base = tempRates.base;
-                        console.log(fx(1).from('USD').to($scope.input.type));
-                    } else {
-                        var fxSetup = {
-                            rates : tempRates.rates,
-                            base : tempRates.base
+                if(tempRates == null) { 
+                    $timeout(checkRates, 100);
+                } else {
+                    $http.post(proxy, getScbRatesUrl).then(function(response) {
+                        var input = response.data;
+                        var regex = /<td width="\d+" align="right" class="TextMainBorderGlay">(.+)<\/td>/g;
+                        var matches, output = [];
+                        while ((matches = regex.exec(input)) && output.length < 3) {
+                            output.push(matches[1]);
                         }
-                    }
-                    $http.post(writeRatesUrl, { rates: tempRates }).then(function(response) {
-                        console.log('writing rates: ' + response.data);
-                        console.log(rates);
-                        console.log('Will check again in 20 minutes.')
-                        $timeout(checkRates, 1200000);
+                        var ttSell = output[0];
+                        var ttBuy = output[2];
+                        console.log('SCB Selling Rate: ' + ttSell);
+                        console.log('SCB Buying Rate: ' + ttBuy);
+                        tempRates.rates.scbSell = Number(ttSell);
+                        tempRates.rates.scbBuy = Number(ttBuy);
+                        rates = angular.copy(tempRates);
+                        if ( typeof fx !== "undefined" && fx.rates ) {
+                            fx.rates = tempRates.rates;
+                            fx.base = tempRates.base;
+                            console.log('Actual THB Rate: ' + fx(1).from('USD').to('THB'));
+                        } else {
+                            var fxSetup = {
+                                rates : tempRates.rates,
+                                base : tempRates.base
+                            }
+                        }
+                        $http.post(writeRatesUrl, { rates: tempRates }).then(function(response) {
+                            var updateTime = new Date().toLocaleTimeString('en-US', { hour12: false, 
+                                             hour: "numeric", 
+                                             minute: "numeric"});
+                            console.log('Last updated at: ' + updateTime);
+                            $timeout(checkRates, 1200000);
+                        });
                     });
-                });
+                }
             });
         };
 
@@ -109,7 +117,10 @@
                                 localUpdate();
                             }
                             var delay = Number(updateNeeded);
-                            console.log('Will check again in: ' + delay + ' seconds.')
+                            var updateTime = new Date().toLocaleTimeString('en-US', { hour12: false, 
+                                             hour: "numeric", 
+                                             minute: "numeric"});
+                            console.log('Last updated at: ' + updateTime);
                             $timeout(checkRates, delay * 1000);
                         }
                     } else if(updateNeeded == 'true') {
@@ -124,29 +135,48 @@
                 $timeout(checkExchanges, 100);
             } else {
                 $http.post(proxy, getBitstampRateUrl).then(function(response) {
-                    exchanges.bitstamp = Number(response.data.ask);
+                    exchanges.bitstampAsk = Number(response.data.ask);
+                    exchanges.bitstampBid = Number(response.data.bid);
                 });
                 $http.post(proxy, getBxRateUrl).then(function(response) {
-                    exchanges.bx = response.data.highbid[0].rate;
+                    exchanges.bxBid = response.data.highbid[0].rate;
+                    exchanges.bxAsk = response.data.lowask[0].rate;
                 });
                 $timeout(checkExchanges, 10000);
             }
         };
 
-        $scope.calcTotalExchangeRateFee = function() {
-            if ( rates != null ) {
-                return fx(fx($scope.input.amount).from($scope.input.type).to('THB') / fx(1).from('USD').to('THB') - fx($scope.input.amount).from($scope.input.type).to('THB') / fx(1).from('USD').to('scbSell')).from('USD').to($scope.input.type);
-            } else {
-                return 0;
-            }
+        $scope.bx2bs = {
+            calcTotalExchangeRateFee: function() {
+                if ( rates != null ) {
+                    return fx(fx($scope.input.amount).from($scope.input.type).to('THB') - fx($scope.input.amount).from($scope.input.type).to('USD') * rates.rates.scbBuy).from('THB').to($scope.input.type);
+                } else {
+                    return 0;
+                }
+            },
+            calcTotalBitstampTransferFee: function() {
+                var fee = fx($scope.input.amount).from($scope.input.type).to('USD') * 0.0009;
+                return fee > 15 ? fx(fee).from('USD').to($scope.input.type) : fx(15).from('USD').to($scope.input.type);
+            },
+
         };
 
-        $scope.calcTotalTransferFee = function() {
-            if ( rates != null ) {
-                return fx(1350).from('THB').to($scope.input.type);
-            } else {
-                return 0;
-            }
+        $scope.bs2bx = {
+            calcTotalExchangeRateFee: function() {
+                if ( rates != null ) {
+                    return fx(fx($scope.input.amount).from($scope.input.type).to('USD') - fx($scope.input.amount).from($scope.input.type).to('THB') / rates.rates.scbSell).from('USD').to($scope.input.type);
+                } else {
+                    return 0;
+                }
+            },
+            calcTotalScbSwiftTransferFee: function() {
+                if ( rates != null ) {
+                    return fx(1350).from('THB').to($scope.input.type);
+                } else {
+                    return 0;
+                }
+            },
+
         };
 
         $scope.calcTotalBitstampDepositFee = function() {
@@ -175,7 +205,10 @@
 
         $scope.calcTotalDiffBetweenExchanges = function() {
             if (rates != null) {
-                return fx((fx($scope.input.amount).from($scope.input.type).to('USD') / exchanges.bitstamp) * exchanges.bx).from('THB').to($scope.input.type) - $scope.input.amount;
+                var bs2bx = fx((fx($scope.input.amount).from($scope.input.type).to('USD') / exchanges.bitstampAsk) * exchanges.bxBid).from('THB').to($scope.input.type) - $scope.input.amount;
+                var bx2bs = fx((fx($scope.input.amount).from($scope.input.type).to('THB') / exchanges.bxAsk) * exchanges.bitstampBid).from('USD').to($scope.input.type) - $scope.input.amount;
+                $scope.isBs2Bx = bx2bs > bs2bx;
+                return Math.max(bx2bs, bs2bx);
             } else {
                 return 0;
             }
@@ -184,11 +217,15 @@
         $scope.calcTotalNetProfit = function() {
             return $scope.calcTotalDiffBetweenExchanges() 
                     - $scope.calcTotalExchangeRateFee()
-                    - $scope.calcTotalTransferFee()
-                    - $scope.calcTotalBitstampDepositFee()
+                    - ($scope.isBs2Bx ? $scope.calcTotalScbSwiftTransferFee() : $scope.calcTotalBitstampTransferFee())
+                    - ($scope.isBs2Bx ? $scope.calcTotalBitstampDepositFee() : 0)
                     - $scope.calcTotalBitstampCommissionFee()
                     - $scope.calcTotalBxCommissionFee()
-                    - $scope.calcTotalBxWithdrawFee();
+                    - ($scope.isBs2Bx ? $scope.calcTotalBxWithdrawFee() : $scope.calcTotalScbLocalTransferFee());
+        };
+
+        $scope.calcTotalScbLocalTransferFee = function() {
+            return fx((parseInt(($scope.input.amount / fx(50000).from('THB').to($scope.input.type)), 10) + 1) * 35).from('THB').to($scope.input.type);
         };
 
         $scope.calcTraded = function(total) {
@@ -198,7 +235,19 @@
                 return 0;
             }
         };
-        
+
+        $scope.updateScbRate = function() {
+            if ( rates != null ) {
+                if($scope.input.scbGetLatestRate) {
+                    console.log('Getting latest SCB rate...');
+                    $scope.input.scbRate = $scope.isBs2Bx ? rates.rates.scbSell : rates.rates.scbBuy;
+                }
+            }
+        };
+
+        $scope.getPercentage = function(divided, divisor) {
+            return ((divided / divisor) * 100).toFixed(2) + '%';
+        };
 
         checkRates();
         checkExchanges();

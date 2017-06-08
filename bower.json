@@ -16,6 +16,7 @@
   "dependencies": {
     "angular": "1.6.3",
     "money.js": "^0.1.3",
-    "accounting.js": "^0.4.1"
+    "accounting.js": "^0.4.1",
+    "angular-bootstrap": "^2.5.0"
   }
 }
